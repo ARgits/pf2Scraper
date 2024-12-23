@@ -1,16 +1,15 @@
-import { defineStore, storeToRefs } from "pinia";
+import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { useContentStore } from "./content";
 import { useRoute } from "vue-router";
-import { useFavoritesStore } from "./favorites";
-import type { DataRoutes } from "@types";
+import { devLog } from '@/utils.ts'
 
 export const usePaginationStore = defineStore("pagination", () => {
     const currentPage = ref(0)
     const itemsPerPage = ref(50)
     const route = useRoute()
-    const { filteredData } = storeToRefs(useContentStore())
-    function changePage(numOfPage: number) {
+    const routeName = computed(() => route.name)
+    function changePage(numOfPage: number, needDataQuery: boolean = true) {
         if (numOfPage < 0) {
             currentPage.value = 0
             return
@@ -20,44 +19,60 @@ export const usePaginationStore = defineStore("pagination", () => {
             return
         }
         currentPage.value = numOfPage
+        if (needDataQuery) {
+            const { getData } = useContentStore()
+            getData().then(()=>devLog('Change page'))
+        }
     }
     const numOfPages = computed(() => {
-        if (route.fullPath.includes('favorites')) {
-            const favoriteStore = useFavoritesStore()
-            const dataType = route.fullPath.split('/')[2] as DataRoutes
-            return Math.ceil(favoriteStore.data[dataType].length / itemsPerPage.value)
+        const { numOfItems, isDataFetched } = useContentStore()
+        if (isDataFetched) {
+            
+            return Math.ceil(numOfItems / itemsPerPage.value)
         }
-        const contentStore = useContentStore()
-        if (contentStore.isDataFetched) {
-            return Math.ceil(contentStore.filteredData.length / itemsPerPage.value)
-        }
-        return 1
+        return 0
     })
-    //creates array of "page buttons", that looks like this (example) "1 2 ... 4 5 6 ... 11 12"
     const pages = computed(() => {
-        if (numOfPages.value > 1) {
-            const result: (number | "...")[] = []
-            const lowNumberFromCurrent = currentPage.value - 2
-            const highNumberFromCurrent = currentPage.value + 2
-            for (let i = 0; i < numOfPages.value; i++) {
-                if (i === 0 || i === 1 || i === numOfPages.value - 1 || i === numOfPages.value - 2) {
-                    result.push(i)
-                } else if (i >= lowNumberFromCurrent && i <= highNumberFromCurrent && !result.includes(i)) {
-                    result.push(i)
-                } else {
-                    const tempInd = [...result].reverse().findIndex((v) => v === "...")
-                    const ind = result.length - 1 - tempInd
-                    if (tempInd === -1 || ind !== result.length - 1) {
-                        result.push("...")
-                    }
+        const totalPages = numOfPages.value;
+        const current = currentPage.value;
+        const result: (number | "...")[] = [];
 
-                }
-
-            }
-            return result
+        if (totalPages <= 1) {
+            return result; // Return early if there's only one page or none
         }
-        return []
+
+        // Always include the first two pages
+        for (let i = 0; i < Math.min(2, totalPages); i++) {
+            result.push(i);
+        }
+
+        // Add ellipsis if necessary
+        if (current > 3) {
+            result.push("...");
+        }
+
+        // Add current page and surrounding pages
+        const low = Math.max(2, current - 2);
+        const high = Math.min(totalPages - 3, current + 2);
+
+        for (let i = low; i <= high; i++) {
+            result.push(i);
+        }
+
+        // Add ellipsis if necessary
+        if (high < totalPages - 3) {
+            result.push("...");
+        }
+
+        // Always include the last two pages
+        for (let i = Math.max(totalPages - 2, 2); i < totalPages; i++) {
+            result.push(i);
+        }
+
+        return result;
     })
-    watch([route, filteredData], () => { console.log(route); currentPage.value = 0 })
+    watch(numOfPages,()=>{if(currentPage.value>=(numOfPages.value-1))changePage(0,true)})
+    watch([routeName,], ([newRoute], [oldRoute]) => { changePage(0, newRoute === oldRoute) })
+
     return { currentPage, itemsPerPage, numOfPages, changePage, pages }
 })

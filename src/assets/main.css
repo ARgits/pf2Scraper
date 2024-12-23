@@ -22,7 +22,7 @@ button {
 
 }
 
-.svg-inline--fa {
+:not(.loading)>.svg-inline--fa {
   /* border: .25rem solid transparent; */
   --fa-animation-iteration-count: 1;
   transition: all .5s ease;
@@ -45,3 +45,35 @@ a {
   transition: top .15s ease;
   top: 0;
 }
+
+.wrapper {
+  &.flex {
+    display: flex;
+  }
+}
+
+button.icon {
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+h3.title {
+  background-color: green;
+  height: 1.5em;
+  color: black;
+  border-radius: var(--border-radius);
+}
+
+h3 {
+  font-size: 1.1em;
+  padding: 0;
+  margin: 0;
+  margin-block: 0;
+}
+
+/* @media (max-aspect-ratio: 1/1) {
+  button {
+    font-size: 24px;
+  }
+} */

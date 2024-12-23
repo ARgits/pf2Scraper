@@ -4,16 +4,20 @@ import type { generalContent } from '@types';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as emptyBookmark } from "@fortawesome/free-regular-svg-icons";
-defineProps<{ id: generalContent["id"], dataType: generalContent["dataType"] }>()
+defineProps<{ id: generalContent["id"] }>()
 const { hasItemById, addRemoveItem } = useFavoritesStore()
 </script>
 <template>
-    <button @click="addRemoveItem(id, dataType)">
-        <FontAwesomeIcon :icon="hasItemById(id) ? faBookmark : emptyBookmark"></FontAwesomeIcon>
-    </button>
+  <button
+    class="button"
+    aria-label="add/remove to favorites"
+    @click="addRemoveItem(id)"
+  >
+    <FontAwesomeIcon :icon="hasItemById(id) ? faBookmark : emptyBookmark" />
+  </button>
 </template>
 <style lang="scss" scoped>
-button {
+.button {
     display: inline;
     padding: 0;
     float: right;

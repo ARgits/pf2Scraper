@@ -28,3 +28,6 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+.qodo
+/generated/*
+/dev-dist/*

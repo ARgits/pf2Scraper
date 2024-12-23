@@ -2,10 +2,13 @@
 </script>
 <template>
   <footer>
-    <p>Made by Alexander "ARgits" Kudryavtsev. Использовался перевод с сайта <a
-        href="https://pf2e-ru-translation.readthedocs.io/ru/latest/index.html">Yuri
+    <p>
+      Made by Alexander "ARgits" Kudryavtsev. Использовался перевод с сайта <a
+        href="https://pf2e-ru-translation.readthedocs.io/ru/latest/index.html"
+      >Yuri
         "Balt" Voronin. </a>. В случае обнаружения ошибок можно создать issue на <a
-        href="https://github.com/ARgits/pf2eRuDB">
+        href="https://github.com/ARgits/pf2eRuDB"
+      >
         github</a>
     </p>
   </footer>

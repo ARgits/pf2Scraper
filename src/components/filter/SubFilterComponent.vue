@@ -1,181 +1,213 @@
 <script setup lang="ts">
-import { computed, inject, type Ref, ref } from 'vue';
-import type { DataRoutes, FilterKeys, filterProps } from "@types"
-import { useFilterStore } from "@stores/filter"
-import { useRoute } from "vue-router";
-import ContainerSlideTransition from "@components/transitions/ContainerSlideTransition.vue"
+import { useContentStore } from '@/stores/content';
+import type { filterQueryResult } from '@/types';
+import { ref, capitalize } from 'vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faBan, faCaretLeft } from '@fortawesome/free-solid-svg-icons';
 import RotateTransition from '@components/transitions/RotateTransition.vue';
-
-const filterStore = useFilterStore()
-const route = useRoute()
-const { subfiltKey } = defineProps<{ subfiltKey: keyof FilterKeys[DataRoutes] }>()
-const dataType = computed(() => {
-  return route.fullPath.includes('favorites') ? route.fullPath.split('/')[2] as DataRoutes : route.path.replace('/', '') as DataRoutes
-})
-const searchOption = ref("")
-const data = computed(() => filterStore.filterReadyData[dataType.value][subfiltKey] as filterProps & { isDeep: false })
-const dataOptions = computed(() => data.value.selection === "minMax" ? [] : data.value.options?.filter((opt) => opt.toLocaleLowerCase().includes(searchOption.value.toLocaleLowerCase())))
-const openedFilter = inject<Ref<keyof FilterKeys[DataRoutes] | "">>("openedFilter")
-// const isShown = computed(() => openedFilter!.value === subfiltKey)
-const isOpened = ref(false)
-const isShown = computed(() => isOpened.value)
-
-function changeState(opt: string) {
-  filterStore.changeState(dataType.value, subfiltKey, opt)
+import { faBan, faCaretLeft, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
+const { resetFilter, updateMinFilterOption, updateMaxFilterOption, setDisabledTextFilterOption, setEnabledTextFilterOption } = useContentStore()
+const { subFilter } = defineProps<{ subFilter: filterQueryResult }>()
+const isClosed = ref(true)
+function updateMaxOption(event: Event, option: string) {
+  
+  const el = event?.target as HTMLInputElement
+  updateMaxFilterOption(option, parseInt(el.value), subFilter.data_group)
 }
-
-function openFilter() {
-  openedFilter!.value = openedFilter!.value === subfiltKey ? "" : subfiltKey
-  isOpened.value = !isOpened.value
+function updateMinOption(event: Event, option: string) {
+  
+  const el = event?.target as HTMLInputElement
+  updateMinFilterOption(option, parseInt(el.value), subFilter.data_group)
 }
-
-function resetFilter() {
-  filterStore.resetFilter(dataType.value, subfiltKey)
+function updateTextOption(option: string, type: 'enable' | 'disable') {
+  
+  if (type === 'enable') {
+    setEnabledTextFilterOption(option, subFilter.data_group)
+  } else {
+    setDisabledTextFilterOption(option, subFilter.data_group)
+  }
 }
+function checkNumericInput(event: KeyboardEvent) {
+  const key = event.key
+  const pattern = new RegExp((event.target as HTMLInputElement).pattern)
 
-const isFilterNotEmpty = computed(() => {
-  if (data.value.isDeep) return false
-  if (data.value.value.length && !data.value.defaultValue.length) {
-    return true
+  
+  if (!key.match(pattern) && key !== 'Backspace') {
+    
+    event.preventDefault()
+    event.stopPropagation()
+    return
   }
-  if (data.value.disabled.length) {
-    return true
+  const target = event.target as HTMLInputElement
+  
+  const newVal = key === 'Backspace' ? parseInt(target.value.slice(0, target.value.length - 1)) : parseInt(target.value + key)
+  
+  
+  if (parseInt(target.min) > newVal || parseInt(target.max) < newVal) {
+    
+    event.stopImmediatePropagation()
   }
-  if (data.value.defaultValue.length) {
-    return !data.value.value.every((item) => data.value.defaultValue.includes(item.toString()))
-  }
-  return false
-})
-
+}
 </script>
 <template>
-  <div class="subfilter">
-    <div class="name" @click="openFilter">
-      <span>{{ data.name }}</span>
-      <FontAwesomeIcon :icon="faBan" v-if="isFilterNotEmpty" @click.stop="resetFilter" beat-fade></FontAwesomeIcon>
-      <RotateTransition :trigger="isShown" angle="-90deg">
-        <FontAwesomeIcon :icon="faCaretLeft"></FontAwesomeIcon>
-      </RotateTransition>
+  <div>
+    <div>
+      <span class="name"> {{ capitalize(subFilter.filter_name) }}</span>
+      <button
+        v-if="subFilter.disabled.some(f => f) || subFilter.enabled.some(f => f)"
+        class="icon"
+        @click.stop="() => resetFilter(subFilter.data_group)"
+      >
+        <FontAwesomeIcon
+          :icon="faBan"
+          beat-fade
+        />
+      </button>
+      <button
+        class="icon"
+        @click="() => isClosed = !isClosed"
+      >
+        <RotateTransition
+          :trigger="!isClosed"
+          angle="-90deg"
+        >
+          <FontAwesomeIcon :icon="faCaretLeft" />
+        </RotateTransition>
+      </button>
     </div>
-    <ContainerSlideTransition>
-      <template v-if="isShown">
-        <div v-if="data.selection === 'minMax'">
-          <label> От
-            <input type="number" :min="data.min" :max="data.value[1]" v-model="data.value[0]" />
-          </label>
-          <label> До
-            <input type="number" :min="data.value[0]" :max="data.max" v-model="data.value[1]" />
-          </label>
-        </div>
-
-        <div v-else class="options">
-          <div v-if="data.hasSearch" style="flex-basis: 100%;">
-            <input v-model="searchOption" />
-          </div>
-          <div v-for="opt of dataOptions" :key="opt" class="options_item"
-            :class="{ include: data.value.includes(opt), exclude: data.disabled.includes(opt) }"
-            @click="changeState(opt)">
-            <div>
-              {{ data.optionsName?.[opt] ?? opt }}
-            </div>
-          </div>
-        </div>
+    <div
+      class="options"
+      :class="{ closed: isClosed, grid: subFilter.data_max[0] }"
+    >
+      <template v-if="!subFilter.data_max[0]">
+        <label
+          v-for="(value, index) in subFilter.id"
+          :key="value"
+          class="options_item"
+        >
+          <span>{{ capitalize(subFilter.option_name[index]) }}</span>
+          <button
+            class="button"
+            :class="{ enabled: subFilter.enabled[index], excluded: subFilter.exclude_enabled[index] }"
+            @click="updateTextOption(value, 'enable')"
+          >
+            <FontAwesomeIcon :icon="faCheck" />
+          </button>
+          <button
+            class="button"
+            :class="{ disabled: subFilter.disabled[index], excluded: subFilter.exclude_disabled[index] }"
+            @click="updateTextOption(value, 'disable')"
+          >
+            <FontAwesomeIcon :icon="faXmark" />
+          </button>
+        </label>
       </template>
-    </ContainerSlideTransition>
+      <template v-else>
+        <template v-for="(value, index) in subFilter.id">
+          <span v-if="value !== subFilter.data_group"> {{ capitalize(capitalize(subFilter.option_name[index])) }}
+          </span>
+          <label>От
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]"
+              :min="subFilter.data_min_default[index]"
+              :max="subFilter.data_max_default[index]"
+              :value="subFilter.data_min[index]"
+              @keydown="checkNumericInput"
+              @change="(e) => updateMinOption(e, value)"
+            >
+          </label>
+          <label>До
+            <input
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]"
+              :min="subFilter.data_min_default[index]"
+              :max="subFilter.data_max_default[index]"
+              :value="subFilter.data_max[index]"
+              @keydown="checkNumericInput"
+              @change="(e) => updateMaxOption(e, value)"
+            >
+          </label>
+        </template>
+      </template>
+    </div>
   </div>
-
 </template>
-<style scoped lang="scss">
-.subfilter {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.name {
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  justify-content: space-between;
-  background-color: rgba(0, 0, 0, .1);
-  border-radius: var(--border-radius);
-  align-items: center;
-  padding: 0 .5rem;
-
-  & .fa-ban {
-    margin: 0 .5rem 0 auto
-  }
-}
-
-label {
-  padding: 0 .25rem;
-  border: 1px solid black;
-  border-radius: var(--border-radius);
-  font-family: "Times New Roman", serif;
-
-  &:not(:first-child) {
-    margin-left: 10px;
-  }
-
-  &:focus-within {
-    border-color: darkorange;
-  }
-
-  & input {
-    background-color: unset;
-    border: none;
-    width: fit-content;
-
-    &:focus,
-    &:focus-visible {
-      border: none;
-      outline: none;
-    }
-  }
-}
-
-.subFilter {
-
-  &_item {
-    border: 1px solid black;
-    border-radius: var(--border-radius);
-    height: fit-content;
-  }
-}
-
+<style lang="scss">
 .options {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: flex-start;
   align-content: flex-start;
-  overflow-y: auto;
+  overflow-y: hidden;
   scrollbar-gutter: stable;
-  //border: 1px dotted black;
   padding: 0 .5rem;
-  // height: 500px;
-  min-height: 1.5rem;
-  // max-height: 500px;
+  height: calc-size(auto, size);
+  transition: height .2s ease;
+  transition-behavior: allow-discrete;
 
-
+  & input {
+    max-width: 4rem;
+  }
 
   &_item {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    border: 1px solid black;
+    border-radius: var(--border-radius);
+
+    span {
+      padding: 0 10px;
+      // margin-right: 10px;
+      text-align: center;
+      // font-weight: bold;
+    }
+
+    .button {
+      flex: 1;
+      display: inline-block;
+      border: 0;
+      border-left: 1px solid black;
+      border-radius: var(--border-radius) 0 0 var(--border-radius);
+
+      &:not(:first-of-type) {
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      }
+    }
+  }
+
+  &.closed {
+    height: 0;
+  }
+
+  &.grid {
+    display: grid;
+    grid-template-columns: 1fr .5fr .5fr
+  }
+
+  button {
     display: flex;
     border: 1px solid black;
     border-radius: var(--border-radius);
     user-select: none;
     padding: 0 .25rem;
-    // min-height: min-content;
+    transition: background-color .5s linear;
 
-    &.include {
+    &.excluded {
+      background-color: hsl(0, 0%, 50%)
+    }
+
+    &.enabled {
       background-color: hsl(113, 50%, 50%)
     }
 
-    &.exclude {
+    &.disabled {
       background-color: hsl(0, 100%, 60%)
     }
   }
+
 }
 </style>

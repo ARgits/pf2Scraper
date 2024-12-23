@@ -2,9 +2,9 @@
 
 </script>
 <template>
-    <TransitionGroup name="list-fade">
-        <slot></slot>
-    </TransitionGroup>
+  <TransitionGroup name="list-fade">
+    <slot />
+  </TransitionGroup>
 </template>
 <style lang="scss">
 .list-fade {

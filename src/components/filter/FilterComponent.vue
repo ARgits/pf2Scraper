@@ -1,38 +1,20 @@
 <script setup lang="ts">
-import { useFilterStore } from "@stores/filter"
-import { computed, provide, ref, watch } from "vue";
-import { useRoute } from "vue-router";
 import SubFilterComponent from "@components/filter/SubFilterComponent.vue"
-import type { DataRoutes, FilterKeys, filterProps } from "@types";
-import DeepSubFilterComponent from "@components/filter/DeepSubFilterComponent.vue";
 
-const filterStore = useFilterStore()
-const route = useRoute()
-const openedFilter = ref("")
-provide("openedFilter" as keyof FilterKeys[DataRoutes], openedFilter)
-watch(route, () => openedFilter.value = "")
-const dataType = computed(() => {
-  return route.fullPath.includes('favorites') ? route.fullPath.split('/')[2] as DataRoutes : route.path.replace('/', '') as DataRoutes
-})
-const filterDataComp = computed(() => {
-  if (filterStore.isDataFetched) {
-    if (import.meta.env.DEV) {
-      console.log(filterStore.filterReadyData)
-    }
-    return Object.entries(filterStore.filterReadyData[dataType.value]) as [keyof FilterKeys[DataRoutes], filterProps][]
-  } else {
-    return []
-  }
-})
+
+import { useContentStore } from "@/stores/content";
+import { storeToRefs } from "pinia";
+const { currentFilter, routeName } = storeToRefs(useContentStore())
 </script>
 <template>
-  <div class="filter_main" v-if="filterDataComp.length">
+  <div class="filter_main">
     <div class="container">
-      <template v-for="[key, subfilt] in filterDataComp" :key="dataType + subfilt.name">
-        <SubFilterComponent v-if="!subfilt.isDeep" :subfiltKey="key"></SubFilterComponent>
-        <DeepSubFilterComponent v-else :subfiltKey="key"></DeepSubFilterComponent>
-      </template>
-
+      <div
+        v-for="some in currentFilter"
+        :key="some.filter_name + routeName"
+      >
+        <SubFilterComponent :sub-filter="some" />
+      </div>
     </div>
   </div>
 </template>
@@ -58,12 +40,13 @@ div.filter_main {
   gap: 10px;
 }
 
-@media (max-aspect-ratio: 1/1) {
-  div.filter_main {
-    flex: 1 1 auto;
-    height: 0px;
-    transition: opacity .5s ease;
-    overflow-y: auto
-  }
-}
-</style>
+
+
+// @media (max-aspect-ratio: 1/1) {
+//   div.filter_main {
+//     flex: 1 1 auto;
+//     height: 0;
+//     transition: opacity .5s ease;
+//     overflow-y: auto
+//   }
+// }</style>

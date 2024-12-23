@@ -1,114 +1,163 @@
+
+
 //
 //Content types
 //
 
 export interface Data {
-    ancestries: ancestryType[];
-    backgrounds: backgroundType[];
-    spells: spellType[];
-    actions: actionType[];
-    feats: featType[];
-    creatures: creatureType[];
-    traits: Set<string>;
-    paragraphs: Set<string>;
-    allData: any[];
-    tables: { fullName: string; desc: string, dataType: 'table', id: string }[];
-    conditions: { fullName: string, desc: string, id: string, dataType: 'condition' }[]
+    ancestry: ancestryType[];
+    background: backgroundType[];
+    spell: spellType[];
+    action: actionType[];
+    feat: featType[];
+    creature: creatureType[];
+    trait: Set<string>;
+    paragraph: Set<string>;
+    table: { fullName: string; description: string, data_type: 'table', id: string }[];
+    condition: { fullName: string, description: string, id: string, data_type: 'condition' }[]
 }
-
+export type rawRuData = {
+    checked: { site: string, data: string }[],
+    error: []
+}
 export type Routes =
-    keyof Pick<Data, "actions" | "backgrounds" | "creatures" | "feats" | "spells" | "ancestries">
+    keyof Pick<Data, "action" | "background" | "creature" | "feat" | "spell" | "ancestry">
     | "favorites";
 export type DataRoutes = Exclude<Routes, "favorites">;
+export type notParsedContent = { id: generalContent["id"], aon_url: string, external_ru_url: string, data_type: generalContent["data_type"] } & Partial<generalContent>
+export type notParsedCategories = 'armor' | 'class' | 'article' | 'creature_family' | 'deity' | 'equipment' | 'hazard' | 'rules' | 'shield' | 'skill' | 'source' | 'trait' | 'weapon' | 'weapon_group' | 'archetype'
 export type generalContent =
     {
         name: string;
-        originalName: string;
-        fullName: string;
-        traits: string[];
-        rarity: string;
-        desc: string;
-        srcBook: string[];
+        original_name: string;
+        trait: string[];
+        rarity: "common" | "uncommon" | "rare" | "unique";
+        description: string;
+        source: string[];
         id: string;
+        is_translate_raw: boolean;
+        original_desc: string;
+        external_ru_url: string;
+        aon_url: `https://2e.aonprd.com${string}`,
+        remaster_id: string[],
+        legacy_id: string[],
+        aon_id: string,
+        ru_id: string
     }
-    & (ancestryProperties | backgroundProperties | spellProperties | featProperties | creatureProperties | actionProperties | classProperties)
+    & (ancestryProperties | backgroundProperties | spellProperties | featProperties | creatureProperties | actionProperties | classProperties | { data_type: notParsedCategories })
 
-
-export type classType = Extract<generalContent, { datatype: 'class' }>
-export type ancestryType = Extract<generalContent, { dataType: 'ancestry' }>
-export type backgroundType = Extract<generalContent, { dataType: 'background' }>
-export type spellType = Extract<generalContent, { dataType: 'spell' }>
-export type featType = Extract<generalContent, { dataType: 'feat' }>
-export type creatureType = Extract<generalContent, { dataType: 'creature' }>
-export type actionType = Extract<generalContent, { dataType: 'action' }>
+export type contentFromQuery = CustomPick<generalContent, 'description' | 'original_desc' | 'original_name' | 'name' | 'trait' | 'aon_url' | 'external_ru_url' | 'id' | 'is_translate_raw' | 'level'>
+export type classType = Extract<generalContent, { data_type: 'class' }>
+export type ancestryType = Extract<generalContent, { data_type: 'ancestry' }>
+export type backgroundType = Extract<generalContent, { data_type: 'background' }>
+export type spellType = Extract<generalContent, { data_type: 'spell' }>
+export type featType = Extract<generalContent, { data_type: 'feat' }>
+export type creatureType = Extract<generalContent, { data_type: 'creature' }>
+export type actionType = Extract<generalContent, { data_type: 'action' }>
+export type classKeys = keyof classType
 //data specific properties
 type ancestryProperties = {
-    dataType: "ancestry",
+    data_type: "ancestry",
     hp: number,
-    size: "tiny" | "small" | "medium" | "large" | "huge" | "gargantuan";
+    size: ("Tiny" | "Small" | "Medium" | "Large" | "Huge" | "Gargantuan")[];
     reach: number;
-    speed: number;
-    traits: string[];
-    senses: string[];
-    rarity: "common" | "uncommon" | "rare";
-    languages: {
-        value: string[]
-    },
-    additionalLanguages: {
+    speed: string;
+    language: string[],
+    additional_languages: {
         count: number,
         value: string[]
     },
     vision: string,
-    boosts: ["str", "dex", "con", "int", "wis", "cha", "any"][],
-    flaws: ["str", "dex", "con", "int", "wis", "cha", "any"][],
-    special: { name: string, desc: string }[]
+    boosts: ("Intelligence" | "Wisdom" | "Strength" | "Dexterity" | "Charisma" | "Constitution" | "Free")[],
+    flaws: ("Intelligence" | "Wisdom" | "Strength" | "Dexterity" | "Charisma" | "Constitution" | "Free")[],
 };
 type backgroundProperties = {
-    dataType: "background",
-    attributeValue: string[][];
-    attributeDesc: string;
-    feat: string;
-    lore: string;
-    customAbs: string;
-    skills: string[]
+    data_type: "background",
+    attribute: ('Intelligence' | 'Wisdom' | 'Strength' | 'Dexterity' | 'Charisma' | 'Constitution' | 'Free')[];
+    feat: string[];
+    lore: string[];
+    skill: string[];
+    feat_markdown: string[];
 }
 type actionProperties = {
-    dataType: "action",
+    data_type: "action",
     action: string;
 }
 type spellProperties = {
-    dataType: "spell",
-    type: "Заклинание" | "Чары" | "Ф.чары" | "Фокус" | "-";
+    data_type: "spell",
+    spell_type: 'Spell' | 'Cantrip' | 'Focus';
     level: number;
-    tradition: string[];
+    tradition: ('Divine' | 'Occult' | 'Arcane' | 'Primal' | 'Elemental')[];
     action: string;
-    castingType: string[];
-    save: string[]
+    casting_type: string[];
+    save: string | "";
 }
 type creatureProperties = {
-    dataType: "creature",
+    data_type: "creature",
     level: number,
-    perception: number,
     senses: string[],
     languages: string[],
-    skills: Record<SkillsEnum, number>,
-    attributes: Record<AttributesEnum, number>,
+    str: number,
+    dex: number,
+    con: number,
+    int: number,
+    wis: number,
+    cha: number,
     hp: number,
-    defences: Record<DefencesEnum, number>,
-    speed: Record<SpeedEnum, number>,
-    melee?: string,
-    range?: string,
-    spells?: string[]
+    ac: number,
+    fortitude: number,
+    reflex: number,
+    will: number,
+    speed: Speed,
+    spells?: string[],
+    acrobatics: number;
+    athletics: number;
+    arcana: number;
+    diplomacy: number;
+    deception: number;
+    intimidation: number;
+    stealth: number;
+    thievery: number;
+    society: number;
+    crafting: number;
+    perception: number;
+    religion: number;
+    occultism: number;
+    survival: number;
+    nature: number;
+    performance: number;
+    medicine: number;
 }
 type featProperties = {
-    dataType: "feat",
+    data_type: "feat",
     action: string;
     level: number;
-    archetype: string;
-    skills: string[]
+    archetype: string[];
+    skill: string[]
+}
+type itemProperties = {
+    data_type: 'item',
+    weight: number,
+    price: number //цена в медных монетах
+    held: ['one', 'two', '-'],
+    contain: generalContent["id"][]
+    isMagical: boolean,
+    isConsumable: boolean,
+} & (adventureItem | classKitItem | alchemicalItem)
+type adventureItem = {
+    itemType: 'adventure',
+}
+type classKitItem = {
+    itemType: 'classKit',
+    class: string,
+}
+type alchemicalItem = {
+    itemType: 'alchemical',
+    subType: 'bomb' | 'elixir' | 'tool'
+
 }
 type classProperties = {
-    dataType: 'class'
+    data_type: 'class'
     hp: number,
     perception: {
         start: proficiencyRankEnum,
@@ -127,99 +176,28 @@ type classProperties = {
         end: proficiencyRankEnum
     }
 
-    feats: featType[],
+    feat: featType[],
     spellTradition: spellTraditionEnum
 
 }
 //
 //Filters Type
 //
-
-export type Filter<Type> = {
-    [Property in keyof Omit<Type, "name" | "desc" | "fullName" | "originalName" | "id">]: filterProps;
-};
-export type filterProps = {
-    name: string;
-    multiply?: boolean;
-
-    excluded: string[];
-    search: string;
-    hasSearch: boolean;
-
-    optionsName?: Record<string, string>;
-} & (notDeepOptions | deepSelection);
-export type FilterUnion = backgroundFilter | spellsFilter | featFilter | actionFilter | creatureFilter;
-type singleRadioProps = {
-    selection: "singleRadio",
-    options: string[],
+export type filterQueryResult = {
+    id: string[],
+    enabled: boolean[],
+    disabled: boolean[],
+    exclude_enabled: boolean[],
+    exclude_disabled: boolean[],
+    type: KeysOfUnion<generalContent>[],
+    data_max: number[],
+    data_max_default: number[],
+    data_min: number[],
+    data_min_default: number[],
+    data_group: string,
+    option_name: string[],
+    filter_name: string
 }
-type multipleRadio = {
-    selection: "multipleRadio",
-    options: string[]
-}
-type minMax = {
-    selection: "minMax",
-    min: number,
-    max: number
-}
-type notDeepOptions = {
-    readonly isDeep: false;
-    value: string[];
-    disabled: string[];
-    defaultValue: string[];
-} & (singleRadioProps | multipleRadio | minMax)
-type deepSelection = {
-    readonly isDeep: true;
-    selection: "minMax" | 'singleRadio' | "multipleRadio";
-    value: Record<string, string[]>;
-    disabled: Record<string, string[]>;
-    defaultValue: Record<string, string[]>;
-    optionsName: Record<string, string>;
-
-} & (deepMinMax | deepRadio)
-type deepMinMax = {
-    selection: 'minMax',
-    options: Record<string, { min: number, max: number }>
-}
-type deepRadio = {
-    selection: 'singleRadio' | 'multipleRadio',
-    options: Record<string, string[]>
-}
-type BgFilterKeys = Pick<backgroundType, "attributeValue" | "skills" | "rarity" | "traits" | "srcBook">;
-type SpellFilterKeys = Pick<spellType, "action" | "castingType" | "level" | "save" | "rarity" | "traits" | "tradition" | "type" | "srcBook">
-type FeatFilterKeys = Pick<featType, "traits" | "rarity" | "level" | "action" | "archetype" | "skills" | "srcBook">;
-type ActionFilterKeys = Pick<actionType, "traits" | "action" | "srcBook">;
-type CreatureFilterKeys = Pick<creatureType, "traits" | "rarity" | "hp" | "srcBook" | "attributes" | "skills" | "level">;
-type AncestriesFilterKeys = Pick<ancestryType, "traits" | "rarity" | "hp" | "srcBook" | "boosts" | "flaws">
-export type backgroundFilter = Filter<BgFilterKeys>;
-export type spellsFilter = Filter<SpellFilterKeys>;
-export type featFilter = Filter<FeatFilterKeys>;
-export type actionFilter = Filter<ActionFilterKeys>;
-export type creatureFilter = Filter<CreatureFilterKeys>;
-export type ancestryFilter = Filter<AncestriesFilterKeys>
-export type UnionFilterKeys =
-    keyof BgFilterKeys
-    | keyof SpellFilterKeys
-    | keyof FeatFilterKeys
-    | keyof ActionFilterKeys
-    | keyof CreatureFilterKeys
-    | keyof AncestriesFilterKeys
-export type globalFilter = {
-    backgrounds: backgroundFilter;
-    spells: spellsFilter;
-    feats: featFilter;
-    actions: actionFilter;
-    creatures: creatureFilter;
-    ancestries: ancestryFilter
-};
-export type FilterKeys = {
-    backgrounds: BgFilterKeys;
-    spells: SpellFilterKeys;
-    feats: FeatFilterKeys;
-    actions: ActionFilterKeys;
-    creatures: CreatureFilterKeys;
-    ancestries: AncestriesFilterKeys
-};
 //Tabs type
 //
 type tab = {
@@ -237,13 +215,39 @@ export interface Tabs {
     favorites: tab;
     creatures: tab
 }
-
+//
+//viewTypes
+//
+export type columnItem = { key: KeysOfUnion<generalContent>, name: string, isShown: boolean, order: number }
+export type columnsObject = { columns: columnItem[], numOfColumns: number }
 //
 //Utility types
 //
 export type Entries<T> = {
     [K in keyof T]: [K, T[K]];
 }[keyof T][];
+export type Values<T> = T[keyof T] extends Iterable<infer U> ? U[] : never
+export type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type CustomPick<T, K extends KeysOfUnion<T>> = { [P in K]: T[P]; }
+export type dbFilter = KeysOfUnion<generalContent> extends infer U ? U extends KeysOfUnion<generalContent> ? {
+    [k in U]:
+    {
+        tables: Extract<generalContent, { [k in U]: any }>["data_type"][],
+        filter_name: string,
+        option_name?: string,
+        data_group: string,
+        type: 'minMax' | 'singleRadio' | 'multipleRadio',
+        is_num: boolean
+    }
+} : never : never;
+export type dbFilterEntries = KeysOfUnion<generalContent> extends infer U ? U extends KeysOfUnion<generalContent> ? [U, {
+    tables: Extract<generalContent, { [k in U]: any }>["data_type"][],
+    filter_name: string,
+    option_name?: string,
+    data_group: string,
+    type: 'minMax' | 'singleRadio' | 'multipleRadio',
+    is_num: boolean
+}][] : never : never
 //
 //Enums
 //
@@ -256,23 +260,24 @@ enum AttributesEnum {
     int = "int"
 }
 
-enum SkillsEnum {
-    acr = "acr",
-    "arc" = "arc",
-    "ath" = "ath",
-    "cra" = "cra",
-    "dec" = "dec",
-    "dip" = "dip",
-    "itm" = "itm",
-    "med" = "med",
-    "nat" = "nat",
-    "occ" = "occ",
-    "prf" = "prf",
-    "rel" = "rel",
-    "soc" = "soc",
-    "ste" = "ste",
-    "sur" = "sur",
-    "thi" = "thi"
+export type SkillMod = {
+    acrobatics?: number;   // Modifier for Acrobatics skill
+    athletics?: number;    // Modifier for Athletics skill
+    arcana?: number;       // Modifier for Arcana skill
+    diplomacy?: number;    // Modifier for Diplomacy skill
+    deception?: number;    // Modifier for Deception skill
+    intimidation?: number; // Modifier for Intimidation skill
+    stealth?: number;      // Modifier for Stealth skill
+    thievery?: number;     // Modifier for Thievery skill
+    society?: number;      // Modifier for Society skill
+    crafting?: number;     // Modifier for Crafting skill
+    perception?: number;   // Modifier for Perception
+    religion?: number;     // Modifier for Religion skill
+    occultism?: number;    // Modifier for Occultism skill
+    survival?: number;     // Modifier for Survival skill
+    nature?: number;       // Modifier for Nature skill
+    performance?: number;  // Modifier for Performance skill
+    medicine?: number;     // Modifier for Medicine skill
 }
 
 enum DefencesEnum {
@@ -287,12 +292,13 @@ enum spellTraditionEnum {
     primal = 'primal',
     occult = 'occult'
 }
-enum SpeedEnum {
-    common = "common",
-    burrow = "burrow",
-    climb = "climb",
-    fly = "fly",
-    swim = "swim",
+export interface Speed {
+    land?: number;      // Movement speed on land
+    fly?: number;       // Flying speed
+    swim?: number;      // Swimming speed
+    burrow?: number;    // Burrowing speed
+    climb?: number;     // Climbing speed
+    max?: number;       // Maximum possible speed
 }
 enum proficiencyRankEnum {
     untrained = "untrained",

@@ -10,20 +10,27 @@
     "src/data/dev/*",
     "src/data/manualData/*",
     "src/types.ts",
+    "env.d.ts",
+    "src/db.ts"
   ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "esModuleInterop":true,
-    "types": ["node"],
-    "allowImportingTsExtensions":true,
-        "paths": {
-      "@data/*":["./src/data/*"],
-      "@types":["./src/types.ts"]
+    "target": "esnext",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": [
+      "node"
+    ],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@data/*": [
+        "./src/data/*"
+      ],
+      "@types": [
+        "./src/types.ts"
+      ]
     }
   }
 }

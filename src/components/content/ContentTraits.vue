@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import type { generalContent } from '@types';
-
-defineProps<{ content: generalContent }>()
+import { v4 as uuidv4 } from 'uuid'
+import { capitalize,  } from 'vue';
+const { trait } = defineProps<{ trait: generalContent["trait"] }>()
+const uuid = uuidv4()
 </script>
 <template>
-    <div class="container">
-        <div v-for="trait in content.traits" :key="content.id + trait">
-            {{ trait }}
-        </div>
+  <div
+    v-if="trait"
+    class="container"
+  >
+    <div
+      v-for="tr in trait"
+      :key="uuid + tr"
+    >
+      {{ capitalize(tr) }}
     </div>
-    <hr />
+  </div>
 </template>
 <style lang="scss" scoped>
 .container {
@@ -19,10 +26,10 @@ defineProps<{ content: generalContent }>()
 
     &>* {
         font-family: Roboto Condensed, sans-serif;
-      border: 1px solid #dac68a;
-      border-right-width: 2px;
-      border-left-width: 2px;
-      border-radius: 2px;
+        border: 1px solid #dac68a;
+        border-right-width: 2px;
+        border-left-width: 2px;
+        border-radius: 2px;
         background-color: #59180df2;
         color: #fff;
         text-align: center;
